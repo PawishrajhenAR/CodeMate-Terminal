@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeMate Terminal - AI-Powered Terminal</title>
+    <title>CodeMate Terminal</title>
     <style>
         * {
             margin: 0;
@@ -12,348 +12,387 @@
         }
 
         body {
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-            color: #e0e0e0;
-            height: 100vh;
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+            font-size: 13px;
+            line-height: 1.5;
             overflow: hidden;
+            height: 100vh;
         }
 
         .terminal-container {
+            width: 100%;
+            height: 100vh;
+            background: #0d1117;
+            padding: 16px;
+            padding-bottom: 80px; /* Space for fixed input */
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            height: 100vh;
-            padding: 20px;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .header h1 {
-            color: #00d4ff;
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-        }
-
-        .header p {
-            color: #a0a0a0;
-            font-size: 1.1em;
-        }
-
-        .terminal {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 20px;
-            overflow-y: auto;
-            font-size: 14px;
-            line-height: 1.4;
-        }
 
         .terminal-output {
-            margin-bottom: 20px;
-        }
-
-        .command-line {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .prompt {
-            color: #00d4ff;
-            margin-right: 10px;
-            font-weight: bold;
-        }
-
-        .input-container {
-            display: flex;
-            align-items: center;
-            margin-top: 20px;
-        }
-
-        .input-prompt {
-            color: #00d4ff;
-            margin-right: 10px;
-            font-weight: bold;
-        }
-
-        #command-input {
+            background: #0d1117;
+            color: #e6edf3;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-bottom: 8px;
+            min-height: 400px;
             flex: 1;
+            overflow-y: auto;
+        }
+
+        .terminal-input-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0d1117;
+            border-top: 1px solid #21262d;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .terminal-prompt {
+            color: #58a6ff;
+            margin-right: 8px;
+            font-weight: 500;
+        }
+
+        .terminal-input {
             background: transparent;
             border: none;
-            color: #e0e0e0;
-            font-family: inherit;
-            font-size: inherit;
+            color: #e6edf3;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+            font-size: 13px;
             outline: none;
-            padding: 5px;
+            flex: 1;
+            caret-color: #58a6ff;
         }
 
-        .ai-mode-toggle {
-            margin-left: 10px;
-            padding: 5px 10px;
-            background: rgba(0, 212, 255, 0.2);
-            border: 1px solid #00d4ff;
-            border-radius: 5px;
-            color: #00d4ff;
+        .terminal-input::placeholder {
+            color: #7d8590;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 60px;
+            left: 0;
+            right: 0;
+            background: #161b22;
+            border-top: 1px solid #21262d;
+            padding: 4px 16px;
+            font-size: 11px;
+            color: #7d8590;
+            display: flex;
+            justify-content: space-between;
+            z-index: 50;
+        }
+
+        .permission-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0d1117;
+            color: #e6edf3;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .permission-content {
+            max-width: 800px;
+            text-align: center;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+        }
+
+        .ascii-banner {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            color: #58a6ff;
+            margin-bottom: 20px;
+            white-space: pre;
+            text-align: center;
+        }
+
+        .permission-text {
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .permission-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .permission-btn {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            padding: 8px 16px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+            font-size: 13px;
             cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 6px;
+        }
+
+        .permission-btn:hover {
+            background: #30363d;
+            border-color: #58a6ff;
+        }
+
+        .permission-btn.grant:hover {
+            background: #238636;
+            border-color: #238636;
+        }
+
+        .permission-btn.deny:hover {
+            background: #da3633;
+            border-color: #da3633;
+        }
+
+
+        .hidden {
+            display: none;
+        }
+
+        .command-suggestions {
+            position: fixed;
+            bottom: 60px;
+            left: 16px;
+            right: 16px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 200;
+            border-radius: 6px;
+        }
+
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #21262d;
             font-size: 12px;
         }
 
-        .ai-mode-toggle.active {
-            background: #00d4ff;
-            color: #0f0f23;
+        .suggestion-item:hover {
+            background: #21262d;
         }
 
-        .ai-translation {
-            background: rgba(0, 212, 255, 0.1);
-            border-left: 3px solid #00d4ff;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            font-style: italic;
+        .suggestion-item:last-child {
+            border-bottom: none;
         }
 
-        .error {
-            color: #ff6b6b;
-        }
 
-        .success {
-            color: #51cf66;
-        }
-
-        .info {
-            color: #74c0fc;
-        }
-
-        .directory {
-            color: #ffd43b;
-        }
-
-        .file {
-            color: #e0e0e0;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(0, 212, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #00d4ff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .help-section {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .help-section h3 {
-            color: #00d4ff;
-            margin-bottom: 15px;
-        }
-
-        .help-examples {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-        }
-
-        .help-example {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 3px solid #00d4ff;
-        }
-
-        .help-example h4 {
-            color: #51cf66;
-            margin-bottom: 8px;
-        }
-
-        .help-example code {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 2px 6px;
-            border-radius: 3px;
-            color: #ffd43b;
-        }
-
-        .scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: #00d4ff rgba(255, 255, 255, 0.1);
-        }
-
-        .scrollbar::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .scrollbar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .scrollbar::-webkit-scrollbar-thumb {
-            background: #00d4ff;
-            border-radius: 4px;
-        }
-
-        .scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #00b8e6;
+        @media (max-width: 768px) {
+            .terminal-container {
+                padding: 10px;
+                padding-bottom: 100px; /* More space for mobile input */
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            
+            .terminal-input-container {
+                padding: 16px;
+            }
+            
+            .command-suggestions {
+                bottom: 80px;
+                left: 10px;
+                right: 10px;
+            }
+            
+            .status-bar {
+                bottom: 80px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="terminal-container">
-        <div class="header">
-            <h1>🤖 CodeMate Terminal</h1>
-            <p>AI-Powered Terminal for macOS - Professional Edition</p>
+    <!-- Permission Request Screen -->
+    <div class="permission-screen" id="permission-screen">
+        <div class="permission-content">
+            <div class="ascii-banner">
+  ╔═══════════════════════════════════════════════════════════════════════════════════════╗
+  ║                                                                                       ║
+  ║      ██████╗ ██████╗ ██████╗ ███████╗███╗   ███╗ █████╗ ████████╗███████╗          ║
+  ║     ██╔════╝██╔═══██╗██╔══██╗██╔════╝████╗ ████║██╔══██╗╚══██╔══╝██╔════╝          ║
+  ║     ██║     ██║   ██║██║  ██║█████╗  ██╔████╔██║███████║   ██║   █████╗            ║
+  ║     ██║     ██║   ██║██║  ██║██╔══╝  ██║╚██╔╝██║██╔══██║   ██║   ██╔══╝            ║
+  ║     ╚██████╗╚██████╔╝██████╔╝███████╗██║ ╚═╝ ██║██║  ██║   ██║   ███████╗          ║
+  ║      ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝          ║
+  ║                                                                                       ║
+  ║                           AI-Powered Terminal                                        ║
+  ║                         CodeMate.ai Hackathon                                        ║
+  ║                                                                                       ║
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝
         </div>
 
-        <div class="terminal scrollbar" id="terminal">
-            <div class="terminal-output">
-                <div class="info">Welcome to CodeMate Terminal v2.0!</div>
-                <div class="info">Type 'help' for available commands or use natural language.</div>
-                <div class="info">Try AI commands like: "create a folder called test"</div>
-                <br>
+            <div class="permission-text">
+                <div style="border: 1px solid #58a6ff; padding: 20px; margin: 20px 0; background: #0d1117; border-radius: 8px;">
+                    <div style="color: #58a6ff; font-weight: bold; margin-bottom: 15px; text-align: center; font-size: 16px;">
+                        ┌─ System Initialization ─┐
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 13px; margin: 15px 0;">
+                        <div style="padding: 8px; border-left: 3px solid #58a6ff; padding-left: 12px;">
+                            <span style="color: #7d8590;">Platform:</span> 
+                            <span style="color: #e6edf3;" id="platform-info">Detecting...</span>
+                        </div>
+                        <div style="padding: 8px; border-left: 3px solid #58a6ff; padding-left: 12px;">
+                            <span style="color: #7d8590;">Runtime:</span> 
+                            <span style="color: #e6edf3;">Python 3.x</span>
+                        </div>
+                        <div style="padding: 8px; border-left: 3px solid #58a6ff; padding-left: 12px;">
+                            <span style="color: #7d8590;">User:</span> 
+                            <span style="color: #e6edf3;" id="user-info">Current User</span>
+                        </div>
+                        <div style="padding: 8px; border-left: 3px solid #58a6ff; padding-left: 12px;">
+                            <span style="color: #7d8590;">Memory:</span> 
+                            <span style="color: #e6edf3;" id="memory-info">Available</span>
+                        </div>
+                        <div style="padding: 8px; border-left: 3px solid #38d9a9; padding-left: 12px;">
+                            <span style="color: #7d8590;">AI Engine:</span> 
+                            <span style="color: #38d9a9;">✓ Ready</span>
+                        </div>
+                        <div style="padding: 8px; border-left: 3px solid #38d9a9; padding-left: 12px;">
+                            <span style="color: #7d8590;">Web UI:</span> 
+                            <span style="color: #38d9a9;">✓ Active</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <div style="color: #f85149; font-weight: bold; font-size: 16px; margin-bottom: 10px;">
+                        🔐 Permission Required
+                    </div>
+                    <div style="color: #e6edf3; font-size: 14px; margin-bottom: 8px;">
+                        CodeMate Terminal needs access to your system to provide:
+                    </div>
+                    <div style="color: #7d8590; font-size: 12px; line-height: 1.6;">
+                        • File system operations and navigation<br>
+                        • System monitoring and process management<br>
+                        • AI-powered natural language command processing<br>
+                        • Real-time terminal emulation with full functionality
+                    </div>
+                </div>
+            </div>
+            
+            <div class="permission-buttons">
+                <button class="permission-btn grant" onclick="grantPermission()">
+                    ✅ Yes, allow access
+                </button>
+                <button class="permission-btn deny" onclick="denyPermission()">
+                    ❌ No, deny access
+                </button>
             </div>
         </div>
+    </div>
 
-        <div class="input-container">
-            <span class="input-prompt" id="prompt">user@codemate:~$</span>
-            <input type="text" id="command-input" placeholder="Enter command or natural language..." autocomplete="off">
-            <div class="ai-mode-toggle" id="ai-toggle">🤖 AI Mode</div>
-        </div>
 
-        <div class="help-section">
-            <h3>🚀 Quick Start Examples</h3>
-            <div class="help-examples">
-                <div class="help-example">
-                    <h4>📁 File Operations</h4>
-                    <div><code>ls</code> - List files</div>
-                    <div><code>mkdir test</code> - Create folder</div>
-                    <div><code>touch file.txt</code> - Create file</div>
-                </div>
-                <div class="help-example">
-                    <h4>🤖 AI Commands</h4>
-                    <div><code>"create a folder called demo"</code></div>
-                    <div><code>"show me my files"</code></div>
-                    <div><code>"what's my memory usage"</code></div>
-                </div>
-                <div class="help-example">
-                    <h4>🔗 Complex AI</h4>
-                    <div><code>"create a new folder called test and move file1.txt into it"</code></div>
-                    <div><code>"make a backup folder and copy all .py files to it"</code></div>
-                </div>
-                <div class="help-example">
-                    <h4>📊 System Info</h4>
-                    <div><code>ps</code> - Running processes</div>
-                    <div><code>free</code> - Memory usage</div>
-                    <div><code>system_info</code> - System details</div>
-                </div>
-            </div>
+    <!-- Main Terminal -->
+    <div class="terminal-container hidden" id="terminal-container">
+
+        <div class="terminal-output" id="terminal-output"></div>
+        
+        <div class="terminal-input-container">
+            <span class="terminal-prompt" id="terminal-prompt">user@codemate:~$</span>
+            <input type="text" class="terminal-input" id="terminal-input" placeholder="Type command here..." autocomplete="off">
+            <div class="command-suggestions hidden" id="command-suggestions"></div>
         </div>
+    </div>
+
+    <div class="status-bar">
+        <span id="status-info">Ready</span>
+        <span id="current-path">/</span>
     </div>
 
     <script>
         class CodeMateTerminal {
             constructor() {
-                this.terminal = document.getElementById('terminal');
-                this.input = document.getElementById('command-input');
-                this.prompt = document.getElementById('prompt');
-                this.aiToggle = document.getElementById('ai-toggle');
-                this.aiMode = false;
-                this.currentPath = '~';
+                this.output = document.getElementById('terminal-output');
+                this.input = document.getElementById('terminal-input');
+                this.prompt = document.getElementById('terminal-prompt');
+                this.suggestions = document.getElementById('command-suggestions');
+                this.statusInfo = document.getElementById('status-info');
+                this.currentPath = document.getElementById('current-path');
                 this.commandHistory = [];
                 this.historyIndex = -1;
+                this.commandCount = 0;
+                this.currentDir = '/';
 
-                this.init();
+                this.setupEventListeners();
+                this.updatePrompt();
             }
 
-            init() {
+            setupEventListeners() {
                 this.input.addEventListener('keydown', (e) => this.handleKeyDown(e));
-                this.aiToggle.addEventListener('click', () => this.toggleAIMode());
-                this.input.focus();
-
-                // Load initial help
-                this.loadHelp();
-            }
-
-            toggleAIMode() {
-                this.aiMode = !this.aiMode;
-                this.aiToggle.classList.toggle('active', this.aiMode);
-                this.input.placeholder = this.aiMode 
-                    ? "Enter natural language command..." 
-                    : "Enter command...";
+                this.input.addEventListener('input', (e) => this.handleInput(e));
+                this.input.addEventListener('blur', () => this.hideSuggestions());
+                
+                // Keep focus on input for better UX
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.command-suggestions')) {
+                        this.input.focus();
+                    }
+                });
+                
+                // Auto-focus when typing anywhere
+                document.addEventListener('keydown', (e) => {
+                    if (!e.target.matches('input, textarea') && e.key.length === 1) {
+                        this.input.focus();
+                    }
+                });
             }
 
             handleKeyDown(e) {
-                if (e.key === 'Enter') {
+                switch(e.key) {
+                    case 'Enter':
+                        e.preventDefault();
                     this.executeCommand();
-                } else if (e.key === 'ArrowUp') {
+                        break;
+                    case 'ArrowUp':
                     e.preventDefault();
                     this.navigateHistory(-1);
-                } else if (e.key === 'ArrowDown') {
+                        break;
+                    case 'ArrowDown':
                     e.preventDefault();
                     this.navigateHistory(1);
-                } else if (e.key === 'Tab') {
+                        break;
+                    case 'Tab':
                     e.preventDefault();
                     this.handleTabCompletion();
-                }
-            }
-
-            navigateHistory(direction) {
-                if (this.commandHistory.length === 0) return;
-
-                this.historyIndex += direction;
-                
-                if (this.historyIndex < 0) {
-                    this.historyIndex = 0;
-                } else if (this.historyIndex >= this.commandHistory.length) {
-                    this.historyIndex = this.commandHistory.length - 1;
-                }
-
-                this.input.value = this.commandHistory[this.historyIndex] || '';
-            }
-
-            async handleTabCompletion() {
-                const command = this.input.value.trim();
-                if (!command) return;
-
-                // Simple tab completion for common commands
-                const completions = {
-                    'l': 'ls',
-                    'p': 'pwd',
-                    'c': 'cd',
-                    'm': 'mkdir',
-                    't': 'touch',
-                    'h': 'help',
-                    's': 'system_info',
-                    'f': 'free',
-                    'd': 'df',
-                    'u': 'uptime'
-                };
-
-                for (const [prefix, full] of Object.entries(completions)) {
-                    if (command === prefix) {
-                        this.input.value = full + ' ';
                         break;
-                    }
+                    case 'Escape':
+                        this.hideSuggestions();
+                        break;
+                }
+            }
+
+            handleInput(e) {
+                const value = e.target.value;
+                if (value.length > 0) {
+                    this.showSuggestions(value);
+                } else {
+                    this.hideSuggestions();
                 }
             }
 
@@ -361,18 +400,10 @@
                 const command = this.input.value.trim();
                 if (!command) return;
 
-                // Add to history
-                this.commandHistory.push(command);
-                this.historyIndex = this.commandHistory.length;
-
-                // Display command
-                this.addOutput(`<div class="command-line">
-                    <span class="prompt">${this.prompt.textContent}</span>
-                    <span>${this.escapeHtml(command)}</span>
-                </div>`);
-
-                // Show loading
-                const loadingId = this.addOutput('<div class="loading"></div>');
+                this.addToHistory(command);
+                this.appendOutput(`${this.prompt.textContent} ${command}`);
+                this.input.value = '';
+                this.hideSuggestions();
 
                 try {
                     const response = await fetch('/api/execute', {
@@ -380,111 +411,330 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({
-                            command: command,
-                            natural_language: this.aiMode
-                        })
+                        body: JSON.stringify({ command })
                     });
 
-                    const result = await response.json();
+                    const data = await response.json();
                     
-                    // Remove loading
-                    this.removeOutput(loadingId);
-
-                    if (result.status === 'success') {
-                        // Show AI translation if available
-                        if (result.ai_translation) {
-                            this.addOutput(`<div class="ai-translation">
-                                🤖 AI Translation: <code>${this.escapeHtml(result.ai_translation)}</code>
-                            </div>`);
+                    if (data.output) {
+                        // Handle clear command
+                        if (data.output.trim() === 'CLEAR_SCREEN') {
+                            this.clearScreen();
+                        } else {
+                        this.appendOutput(data.output);
                         }
-
-                        // Show output
-                        if (result.output) {
-                            const formattedOutput = this.formatOutput(result.output);
-                            this.addOutput(`<div class="terminal-output">${formattedOutput}</div>`);
-                        }
-
-                        // Update prompt with current path
-                        this.updatePrompt(result.current_path);
-
-                        // Show error if any
-                        if (result.error) {
-                            this.addOutput(`<div class="error">Error: ${this.escapeHtml(result.error)}</div>`);
-                        }
-                    } else {
-                        this.addOutput(`<div class="error">Error: ${this.escapeHtml(result.message)}</div>`);
                     }
-                } catch (error) {
-                    this.removeOutput(loadingId);
-                    this.addOutput(`<div class="error">Connection error: ${this.escapeHtml(error.message)}</div>`);
-                }
+                    
+                    if (data.error) {
+                        this.appendOutput(`Error: ${data.error}`);
+                    }
 
-                // Clear input
-                this.input.value = '';
+                    this.commandCount++;
+                    this.updatePrompt(); // Refresh path after command
+                    this.scrollToBottom(); // Ensure we scroll after command execution
+                    
+                } catch (error) {
+                    this.appendOutput(`Connection error: ${error.message}`);
+                }
+            }
+
+            appendOutput(text) {
+                this.output.textContent += text + '\n';
+                // Auto-scroll to bottom
                 this.scrollToBottom();
             }
 
-            async loadHelp() {
-                try {
-                    const response = await fetch('/api/help');
-                    const result = await response.json();
-                    
-                    if (result.status === 'success') {
-                        const formattedHelp = this.formatOutput(result.help);
-                        this.addOutput(`<div class="terminal-output">${formattedHelp}</div>`);
-                    }
-                } catch (error) {
-                    console.error('Failed to load help:', error);
-                }
-            }
-
-            formatOutput(output) {
-                if (!output) return '';
-
-                return output
-                    .replace(/\n/g, '<br>')
-                    .replace(/📁\s+/g, '<span class="directory">📁 </span>')
-                    .replace(/📄\s+/g, '<span class="file">📄 </span>')
-                    .replace(/Error:/g, '<span class="error">Error:</span>')
-                    .replace(/Success:/g, '<span class="success">Success:</span>')
-                    .replace(/Warning:/g, '<span class="info">Warning:</span>');
-            }
-
-            updatePrompt(path) {
-                const relativePath = path.replace(process.env.HOME || '/Users/user', '~');
-                this.prompt.textContent = `user@codemate:${relativePath}$`;
-            }
-
-            addOutput(html) {
-                const outputDiv = document.createElement('div');
-                outputDiv.innerHTML = html;
-                outputDiv.id = 'output-' + Date.now();
-                this.terminal.appendChild(outputDiv);
-                return outputDiv.id;
-            }
-
-            removeOutput(id) {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.remove();
-                }
-            }
-
             scrollToBottom() {
-                this.terminal.scrollTop = this.terminal.scrollHeight;
+                // Scroll the output container to bottom
+                this.output.scrollTop = this.output.scrollHeight;
+                
+                // Also scroll the main container if needed
+                const container = document.getElementById('terminal-container');
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+                
+                // Smooth scroll to bottom of page
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: document.body.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }, 100);
             }
 
-            escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
+            clearScreen() {
+                // Clear the terminal output
+                this.output.textContent = '';
+                
+                // Reset scroll position
+                this.output.scrollTop = 0;
+                
+                // Focus input
+                this.input.focus();
+            }
+
+            addToHistory(command) {
+                this.commandHistory.unshift(command);
+                if (this.commandHistory.length > 100) {
+                    this.commandHistory.pop();
+                }
+                this.historyIndex = -1;
+            }
+
+            navigateHistory(direction) {
+                if (this.commandHistory.length === 0) return;
+                
+                this.historyIndex += direction;
+                
+                if (this.historyIndex < 0) {
+                    this.historyIndex = -1;
+                    this.input.value = '';
+                } else if (this.historyIndex >= this.commandHistory.length) {
+                    this.historyIndex = this.commandHistory.length - 1;
+                }
+                
+                if (this.historyIndex >= 0) {
+                    this.input.value = this.commandHistory[this.historyIndex];
+                }
+            }
+
+            handleTabCompletion() {
+                const value = this.input.value;
+                const suggestions = this.getSuggestions(value);
+                
+                if (suggestions.length === 1) {
+                    this.input.value = suggestions[0];
+                } else if (suggestions.length > 1) {
+                    this.showSuggestions(value);
+                }
+            }
+
+            getSuggestions(input) {
+                const commands = [
+                    'ls', 'cd', 'pwd', 'mkdir', 'rm', 'cp', 'mv', 'cat', 'grep', 'find',
+                    'ps', 'top', 'free', 'df', 'du', 'which', 'whereis', 'echo',
+                    'help', 'clear', 'history', 'exit', 'codemate', 'ask', 'translate'
+                ];
+                
+                return commands.filter(cmd => cmd.startsWith(input.toLowerCase()));
+            }
+
+            showSuggestions(input) {
+                const suggestions = this.getSuggestions(input);
+                
+                if (suggestions.length === 0) {
+                    this.hideSuggestions();
+                    return;
+                }
+
+                this.suggestions.innerHTML = suggestions
+                    .map(suggestion => `<div class="suggestion-item" onclick="selectSuggestion('${suggestion}')">${suggestion}</div>`)
+                    .join('');
+
+                this.suggestions.classList.remove('hidden');
+            }
+
+            hideSuggestions() {
+                this.suggestions.classList.add('hidden');
+            }
+
+            updatePrompt() {
+                // Get current path from the server
+                this.getCurrentPath().then(path => {
+                    this.currentDir = path;
+                    // Show full path in the prompt like a real terminal
+                    this.prompt.textContent = `${path} ➜`;
+                    this.updateStatus();
+                });
+            }
+
+            async getCurrentPath() {
+                try {
+                    const response = await fetch('/api/execute', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command: 'pwd' })
+                    });
+                    const data = await response.json();
+                    return data.output ? data.output.trim() : '/';
+                } catch (error) {
+                    return '/';
+                }
+            }
+
+            updateStatus() {
+                this.statusInfo.textContent = `Commands: ${this.commandCount} | Status: Active`;
+                this.currentPath.textContent = this.currentDir;
             }
         }
 
-        // Initialize terminal when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            new CodeMateTerminal();
+        // Global functions
+        function selectSuggestion(suggestion) {
+            document.getElementById('terminal-input').value = suggestion;
+            document.getElementById('command-suggestions').classList.add('hidden');
+        }
+
+
+        function grantPermission() {
+            document.getElementById('permission-screen').classList.add('hidden');
+            startTerminal();
+        }
+        
+        // Detect and update system info on permission screen
+        function updatePermissionScreenInfo() {
+            // Detect platform
+            const platform = navigator.platform;
+            const userAgent = navigator.userAgent;
+            let platformInfo = 'Unknown';
+            
+            if (platform.indexOf('Win') > -1) {
+                platformInfo = 'Windows';
+            } else if (platform.indexOf('Mac') > -1) {
+                platformInfo = 'macOS';
+            } else if (platform.indexOf('Linux') > -1) {
+                platformInfo = 'Linux';
+            }
+            
+            // Update platform info if element exists
+            const platformEl = document.getElementById('platform-info');
+            if (platformEl) {
+                platformEl.textContent = platformInfo;
+            }
+            
+            // Update memory info
+            if ('memory' in performance) {
+                const memInfo = performance.memory;
+                const totalMB = Math.round(memInfo.jsHeapSizeLimit / (1024 * 1024));
+                const memoryEl = document.getElementById('memory-info');
+                if (memoryEl) {
+                    memoryEl.textContent = `${totalMB} MB Available`;
+                }
+            }
+            
+            // Update user info
+            const userEl = document.getElementById('user-info');
+            if (userEl) {
+                userEl.textContent = 'Web User';
+            }
+        }
+
+        function denyPermission() {
+            alert('Access denied. CodeMate Terminal requires file system access to function.');
+        }
+
+
+        async function generateWelcomeMessage() {
+            try {
+                // Load system info from backend
+                const response = await fetch('/api/welcome');
+                const data = await response.json();
+                const sysInfo = data.system_info || {};
+                
+                return `
+  ╔═══════════════════════════════════════════════════════════════════════════════════════╗
+  ║                                                                                       ║
+  ║      ██████╗ ██████╗ ██████╗ ███████╗███╗   ███╗ █████╗ ████████╗███████╗             ║
+  ║     ██╔════╝██╔═══██╗██╔══██╗██╔════╝████╗ ████║██╔══██╗╚══██╔══╝██╔════╝             ║
+  ║     ██║     ██║   ██║██║  ██║█████╗  ██╔████╔██║███████║   ██║   █████╗               ║
+  ║     ██║     ██║   ██║██║  ██║██╔══╝  ██║╚██╔╝██║██╔══██║   ██║   ██╔══╝               ║
+  ║     ╚██████╗╚██████╔╝██████╔╝███████╗██║ ╚═╝ ██║██║  ██║   ██║   ███████╗             ║
+  ║      ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝             ║
+  ║                                                                                       ║
+  ║                       🚀 Terminal Session Active                                     ║
+  ║                         CodeMate.ai Hackathon                                        ║
+  ║                                                                                       ║
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ System Status ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Platform: ${sysInfo.platform || 'Unknown'}
+Python: ${sysInfo.python_version || '3.x'}
+User: ${sysInfo.user || 'Current User'}
+Memory: ${sysInfo.memory_total || 'Available'}
+CPU Cores: ${sysInfo.cpu_count || 'N/A'}
+Architecture: ${sysInfo.architecture || 'Unknown'}
+
+🚀 AVAILABLE FEATURES
+✓ AI Natural Language Processing
+✓ Real-time Command Execution
+✓ Command History & Auto-completion
+✓ System Monitoring
+✓ File Operations
+✓ CodeMate Integration
+✓ Cross-platform Web Access
+
+🤖 AI NATURAL LANGUAGE EXAMPLES
+"create a folder called test"
+"show me my files"
+"what's my memory usage"
+"create a new folder called demo and move file1.txt into it"
+"find files called readme"
+"search for function in *.py files"
+"tell me about my system"
+"debug this code file"
+
+💡 Welcome to CodeMate Terminal! Here are some ways to get started:
+
+🔹 Basic Commands: ls, pwd, cd, mkdir, rm, cat, cp, mv
+🔹 System Info: ps, free, df, uptime, whoami, system_info
+🔹 Natural Language: "create a folder called test", "show me my files"
+🔹 AI Features: ask <question>, codemate <command>, translate <text>
+🔹 Get Help: help, codemate status
+
+Type any command or try natural language like "show me system info"
+`;
+            } catch (error) {
+                console.error('Error loading welcome info:', error);
+                return `
+  ╔═══════════════════════════════════════════════════════════════════════════════════════╗
+  ║                                                                                       ║
+  ║      ██████╗ ██████╗ ██████╗ ███████╗███╗   ███╗ █████╗ ████████╗███████╗             ║
+  ║     ██╔════╝██╔═══██╗██╔══██╗██╔════╝████╗ ████║██╔══██╗╚══██╔══╝██╔════╝             ║
+  ║     ██║     ██║   ██║██║  ██║█████╗  ██╔████╔██║███████║   ██║   █████╗               ║
+  ║     ██║     ██║   ██║██║  ██║██╔══╝  ██║╚██╔╝██║██╔══██║   ██║   ██╔══╝               ║
+  ║     ╚██████╗╚██████╔╝██████╔╝███████╗██║ ╚═╝ ██║██║  ██║   ██║   ███████╗             ║
+  ║      ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝             ║
+  ║                                                                                       ║
+  ║                       🚀 Terminal Session Active                                      ║
+  ║                         CodeMate.ai Hackathon                                         ║
+  ║                                                                                       ║
+  ╚═══════════════════════════════════════════════════════════════════════════════════════╝
+
+CodeMate Terminal - Ready for Commands!
+
+Type "help" for available commands or try natural language like "show me my files"
+`;
+            }
+        }
+
+        async function startTerminal() {
+            document.getElementById('terminal-container').classList.remove('hidden');
+            
+            // Initialize terminal
+            window.terminal = new CodeMateTerminal();
+            
+            // Display enhanced welcome message in terminal output
+            const welcomeMessage = await generateWelcomeMessage();
+            
+            window.terminal.appendOutput(welcomeMessage);
+            document.getElementById('terminal-input').focus();
+            
+            // Show initial path
+            window.terminal.updatePrompt();
+            
+            // Ensure proper scrolling
+            setTimeout(() => {
+                window.terminal.scrollToBottom();
+            }, 500);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show permission screen first
+            document.getElementById('permission-screen').classList.remove('hidden');
+            
+            // Update system info on permission screen
+            updatePermissionScreenInfo();
         });
     </script>
 </body>

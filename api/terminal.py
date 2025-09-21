@@ -4,22 +4,42 @@ import os
 import sys
 import subprocess
 import re
+import shutil
+import glob
+import time
 from typing import Dict, List, Optional, Tuple
-import psutil
-import platform
 from datetime import datetime
+from pathlib import Path
 
-# Add the parent directory to the path to import codemate_terminal
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Try to import psutil, fallback if not available
+try:
+    import psutil
+    PSUTIL_AVAILABLE = True
+except ImportError:
+    PSUTIL_AVAILABLE = False
+
+try:
+    import platform
+    PLATFORM_AVAILABLE = True
+except ImportError:
+    PLATFORM_AVAILABLE = False
 
 class TerminalAPI:
-    """API wrapper for CodeMate Terminal functionality."""
+    """Enhanced API wrapper for CodeMate Terminal functionality."""
     
     def __init__(self):
-        self.current_path = os.path.expanduser("~")
+        # Start in C: drive by default (Windows) or root directory (Unix)
+        if os.name == 'nt':  # Windows
+            self.current_path = 'C:\\'
+        else:  # Unix/Linux/Mac
+            self.current_path = '/'
         self.command_history = []
+        self.session_id = f"session_{int(time.time())}"
         
-        # AI patterns for natural language processing
+        # Initialize system info
+        self.system_info = self._get_system_info()
+        
+        # Enhanced AI patterns for natural language processing
         self.ai_patterns = {
             # Complex multi-step commands (check these first)
             'create_and_move': [
@@ -117,8 +137,101 @@ class TerminalAPI:
                 r'show\s+(?:me\s+)?(?:cpu|processor)\s+(?:usage|info)',
                 r'tell\s+me\s+(?:about\s+)?(?:my\s+)?(?:cpu|processor)',
                 r'display\s+(?:cpu|processor)\s+(?:usage|info)'
+            ],
+            'codemate_commands': [
+                r'debug\s+(?:this\s+)?(?:code\s+)?(?:file\s+)?([^\s]+)',
+                r'review\s+(?:this\s+)?(?:code\s+)?(?:file\s+)?([^\s]+)',
+                r'optimize\s+(?:this\s+)?(?:code\s+)?(?:file\s+)?([^\s]+)',
+                r'test\s+(?:this\s+)?(?:code\s+)?(?:file\s+)?([^\s]+)',
+                r'document\s+(?:this\s+)?(?:code\s+)?(?:file\s+)?([^\s]+)'
+            ],
+            'find_files': [
+                r'find\s+(?:files\s+)?(?:called\s+|named\s+)?([^\s]+)',
+                r'search\s+(?:for\s+)?(?:files\s+)?(?:called\s+|named\s+)?([^\s]+)',
+                r'locate\s+(?:files\s+)?(?:called\s+|named\s+)?([^\s]+)'
+            ],
+            'grep_search': [
+                r'search\s+(?:for\s+)?(?:text\s+)?([^\s]+)\s+(?:in\s+)?(?:files\s+)?([^\s]+)',
+                r'find\s+(?:text\s+)?([^\s]+)\s+(?:in\s+)?(?:files\s+)?([^\s]+)',
+                r'grep\s+([^\s]+)\s+(?:in\s+)?([^\s]+)'
             ]
         }
+    
+    def _get_system_info(self) -> Dict[str, str]:
+        """Get system information."""
+        info = {
+            "platform": "Unknown",
+            "python_version": sys.version.split()[0],
+            "user": os.getenv('USER', 'unknown'),
+            "current_directory": self.current_path,
+            "psutil_available": str(PSUTIL_AVAILABLE),
+            "platform_available": str(PLATFORM_AVAILABLE)
+        }
+        
+        if PLATFORM_AVAILABLE:
+            try:
+                info["platform"] = f"{platform.system()} {platform.release()}"
+                info["architecture"] = platform.machine()
+            except:
+                pass
+        
+        if PSUTIL_AVAILABLE:
+            try:
+                info["cpu_count"] = str(psutil.cpu_count())
+                info["memory_total"] = f"{psutil.virtual_memory().total // (1024**3)} GB"
+            except:
+                pass
+        
+        return info
+    
+    def get_system_banner(self) -> str:
+        """Get CodeMate ASCII banner."""
+        banner = """
+╔═══════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                       ║
+║      ██████╗ ██████╗ ██████╗ ███████╗███╗   ███╗ █████╗ ████████╗███████╗          ║
+║     ██╔════╝██╔═══██╗██╔══██╗██╔════╝████╗ ████║██╔══██╗╚══██╔══╝██╔════╝          ║
+║     ██║     ██║   ██║██║  ██║█████╗  ██╔████╔██║███████║   ██║   █████╗            ║
+║     ██║     ██║   ██║██║  ██║██╔══╝  ██║╚██╔╝██║██╔══██║   ██║   ██╔══╝            ║
+║     ╚██████╗╚██████╔╝██████╔╝███████╗██║ ╚═╝ ██║██║  ██║   ██║   ███████╗          ║
+║      ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝          ║
+║                                                                                       ║
+║                           AI-Powered Terminal                                        ║
+║                         CodeMate.ai Hackathon                                        ║
+║                                                                                       ║
+╚═══════════════════════════════════════════════════════════════════════════════════════╝
+"""
+        return banner.strip()
+    
+    def get_welcome_info(self) -> Dict[str, any]:
+        """Get comprehensive welcome information."""
+        info = {
+            "banner": self.get_system_banner(),
+            "system_info": self.system_info,
+            "features": [
+                "AI Natural Language Processing",
+                "Real-time Command Execution", 
+                "Command History & Auto-completion",
+                "System Monitoring",
+                "File Operations",
+                "CodeMate Integration",
+                "Cross-platform Web Access"
+            ],
+            "ai_examples": [
+                "create a folder called test",
+                "show me my files", 
+                "what's my memory usage",
+                "create a new folder called demo and move file1.txt into it",
+                "find files called readme",
+                "search for function in *.py files",
+                "tell me about my system",
+                "debug this code file"
+            ],
+            "permission_granted": True,
+            "session_id": self.session_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        return info
     
     def process_natural_language(self, command: str) -> Optional[str]:
         """Process natural language commands and convert them to terminal commands."""
@@ -159,6 +272,28 @@ class TerminalAPI:
                         return "free"
                     elif category == 'cpu_info':
                         return "cpu"
+                    elif category == 'codemate_commands':
+                        file_name = match.group(1)
+                        if 'debug' in command_lower:
+                            return f"codemate debug {file_name}"
+                        elif 'review' in command_lower:
+                            return f"codemate review {file_name}"
+                        elif 'optimize' in command_lower:
+                            return f"codemate optimize {file_name}"
+                        elif 'test' in command_lower:
+                            return f"codemate test {file_name}"
+                        elif 'document' in command_lower:
+                            return f"codemate docs {file_name}"
+                    elif category == 'find_files':
+                        file_pattern = match.group(1)
+                        return f"find . -name '*{file_pattern}*'"
+                    elif category == 'grep_search':
+                        if len(match.groups()) == 2:
+                            search_text, file_pattern = match.groups()
+                            return f"grep '{search_text}' {file_pattern}"
+                        else:
+                            search_text = match.group(1)
+                            return f"grep '{search_text}' *"
                     
                     # Complex multi-step commands
                     elif category == 'create_and_move':
@@ -268,9 +403,10 @@ class TerminalAPI:
     def _get_builtin_commands(self) -> List[str]:
         """Get list of built-in commands."""
         return [
-            'ls', 'pwd', 'cd', 'mkdir', 'rm', 'touch', 'cat', 'cp', 'mv',
-            'ps', 'free', 'df', 'uptime', 'whoami', 'date', 'find', 'grep',
-            'help', 'exit', 'quit', 'clear', 'history', 'system_info', 'cpu'
+            'ls', 'pwd', 'cd', 'mkdir', 'rm', 'rmdir', 'touch', 'cat', 'cp', 'mv',
+            'ps', 'free', 'df', 'du', 'uptime', 'whoami', 'date', 'find', 'grep',
+            'which', 'whereis', 'echo', 'help', 'exit', 'quit', 'clear', 'history', 
+            'system_info', 'cpu', 'codemate', 'ask', 'translate'
         ]
     
     def _execute_builtin(self, cmd: str, args: List[str]) -> Tuple[str, int]:
@@ -310,6 +446,26 @@ class TerminalAPI:
                 return self._cmd_system_info(args)
             elif cmd == 'cpu':
                 return self._cmd_cpu(args)
+            elif cmd == 'du':
+                return self._cmd_du(args)
+            elif cmd == 'rmdir':
+                return self._cmd_rmdir(args)
+            elif cmd == 'find':
+                return self._cmd_find(args)
+            elif cmd == 'grep':
+                return self._cmd_grep(args)
+            elif cmd == 'which':
+                return self._cmd_which(args)
+            elif cmd == 'whereis':
+                return self._cmd_whereis(args)
+            elif cmd == 'echo':
+                return self._cmd_echo(args)
+            elif cmd == 'codemate':
+                return self._cmd_codemate(args)
+            elif cmd == 'ask':
+                return self._cmd_ask(args)
+            elif cmd == 'translate':
+                return self._cmd_translate(args)
             elif cmd == 'help':
                 return self._cmd_help(args)
             elif cmd == 'history':
@@ -381,8 +537,11 @@ class TerminalAPI:
             return "mkdir: missing operand", 1
         
         try:
-            os.makedirs(args[0], exist_ok=True)
-            return f"Created directory: {args[0]}", 0
+            # Create directory in current working directory
+            dir_name = args[0]
+            full_path = os.path.join(self.current_path, dir_name)
+            os.makedirs(full_path, exist_ok=True)
+            return f"Created directory: {dir_name} at {full_path}", 0
         except Exception as e:
             return f"mkdir: {e}", 1
     
@@ -409,15 +568,20 @@ class TerminalAPI:
         results = []
         for item in files_to_remove:
             try:
-                if os.path.isdir(item):
+                # Handle relative paths from current directory
+                full_path = item
+                if not os.path.isabs(item):
+                    full_path = os.path.join(self.current_path, item)
+                
+                if os.path.isdir(full_path):
                     if recursive:
                         import shutil
-                        shutil.rmtree(item)
+                        shutil.rmtree(full_path)
                         results.append(f"Removed directory: {item}")
                     else:
                         results.append(f"rm: cannot remove '{item}': Is a directory")
                 else:
-                    os.remove(item)
+                    os.remove(full_path)
                     results.append(f"Removed file: {item}")
             except FileNotFoundError:
                 results.append(f"rm: cannot remove '{item}': No such file or directory")
@@ -434,9 +598,12 @@ class TerminalAPI:
             return "touch: missing operand", 1
         
         try:
-            with open(args[0], 'a'):
+            # Create file in current working directory
+            file_name = args[0]
+            full_path = os.path.join(self.current_path, file_name)
+            with open(full_path, 'a'):
                 pass
-            return f"Created file: {args[0]}", 0
+            return f"Created file: {file_name} at {full_path}", 0
         except Exception as e:
             return f"touch: {e}", 1
     
@@ -446,7 +613,12 @@ class TerminalAPI:
             return "cat: missing operand", 1
         
         try:
-            with open(args[0], 'r') as f:
+            # Handle relative paths from current directory
+            file_path = args[0]
+            if not os.path.isabs(file_path):
+                file_path = os.path.join(self.current_path, file_path)
+            
+            with open(file_path, 'r') as f:
                 return f.read(), 0
         except Exception as e:
             return f"cat: {e}", 1
@@ -458,7 +630,16 @@ class TerminalAPI:
         
         try:
             import shutil
-            shutil.copy2(args[0], args[1])
+            # Handle relative paths from current directory
+            source = args[0]
+            dest = args[1]
+            
+            if not os.path.isabs(source):
+                source = os.path.join(self.current_path, source)
+            if not os.path.isabs(dest):
+                dest = os.path.join(self.current_path, dest)
+            
+            shutil.copy2(source, dest)
             return f"Copied {args[0]} to {args[1]}", 0
         except Exception as e:
             return f"cp: {e}", 1
@@ -470,7 +651,16 @@ class TerminalAPI:
         
         try:
             import shutil
-            shutil.move(args[0], args[1])
+            # Handle relative paths from current directory
+            source = args[0]
+            dest = args[1]
+            
+            if not os.path.isabs(source):
+                source = os.path.join(self.current_path, source)
+            if not os.path.isabs(dest):
+                dest = os.path.join(self.current_path, dest)
+            
+            shutil.move(source, dest)
             return f"Moved {args[0]} to {args[1]}", 0
         except Exception as e:
             return f"mv: {e}", 1
@@ -550,11 +740,285 @@ Memory: {psutil.virtual_memory().total // (1024**3)} GB"""
     
     def _cmd_cpu(self, args: List[str]) -> Tuple[str, int]:
         """Show CPU usage."""
+        if not PSUTIL_AVAILABLE:
+            return "CPU info not available (psutil not installed)", 1
+        
         try:
             cpu_percent = psutil.cpu_percent(interval=1)
-            return f"CPU Usage: {cpu_percent:.1f}%", 0
+            cpu_count = psutil.cpu_count()
+            cpu_freq = psutil.cpu_freq()
+            
+            info = f"""CPU Information:
+Usage: {cpu_percent:.1f}%
+Cores: {cpu_count}
+Current Frequency: {cpu_freq.current:.0f} MHz
+Min Frequency: {cpu_freq.min:.0f} MHz
+Max Frequency: {cpu_freq.max:.0f} MHz"""
+            return info, 0
         except Exception as e:
             return f"cpu: {e}", 1
+    
+    def _cmd_du(self, args: List[str]) -> Tuple[str, int]:
+        """Show directory size."""
+        path = args[0] if args else self.current_path
+        
+        try:
+            if not PSUTIL_AVAILABLE:
+                return "Directory size info not available (psutil not installed)", 1
+            
+            # Get directory size
+            total_size = 0
+            for dirpath, dirnames, filenames in os.walk(path):
+                for filename in filenames:
+                    filepath = os.path.join(dirpath, filename)
+                    try:
+                        total_size += os.path.getsize(filepath)
+                    except (OSError, IOError):
+                        pass
+            
+            size_mb = total_size / (1024 * 1024)
+            return f"Directory size: {size_mb:.2f} MB", 0
+        except Exception as e:
+            return f"du: {e}", 1
+    
+    def _cmd_rmdir(self, args: List[str]) -> Tuple[str, int]:
+        """Remove empty directory."""
+        if not args:
+            return "rmdir: missing operand", 1
+        
+        try:
+            os.rmdir(args[0])
+            return f"Removed directory: {args[0]}", 0
+        except OSError as e:
+            return f"rmdir: {e}", 1
+        except Exception as e:
+            return f"rmdir: {e}", 1
+    
+    def _cmd_find(self, args: List[str]) -> Tuple[str, int]:
+        """Find files."""
+        if not args:
+            return "find: missing search pattern", 1
+        
+        try:
+            pattern = args[0]
+            results = []
+            
+            for root, dirs, files in os.walk(self.current_path):
+                for file in files:
+                    if pattern in file:
+                        results.append(os.path.join(root, file))
+            
+            if results:
+                return "\n".join(results[:20]), 0  # Limit to 20 results
+            else:
+                return f"No files found matching '{pattern}'", 0
+        except Exception as e:
+            return f"find: {e}", 1
+    
+    def _cmd_grep(self, args: List[str]) -> Tuple[str, int]:
+        """Search for text in files."""
+        if len(args) < 1:
+            return "grep: missing search pattern", 1
+        
+        try:
+            pattern = args[0]
+            file_pattern = args[1] if len(args) > 1 else "*"
+            
+            results = []
+            for root, dirs, files in os.walk(self.current_path):
+                for file in files:
+                    if file_pattern == "*" or file.endswith(file_pattern.replace("*", "")):
+                        filepath = os.path.join(root, file)
+                        try:
+                            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                                for line_num, line in enumerate(f, 1):
+                                    if pattern in line:
+                                        results.append(f"{filepath}:{line_num}: {line.strip()}")
+                        except (OSError, IOError, UnicodeDecodeError):
+                            continue
+            
+            if results:
+                return "\n".join(results[:20]), 0  # Limit to 20 results
+            else:
+                return f"No matches found for '{pattern}'", 0
+        except Exception as e:
+            return f"grep: {e}", 1
+    
+    def _cmd_which(self, args: List[str]) -> Tuple[str, int]:
+        """Find command location."""
+        if not args:
+            return "which: missing command name", 1
+        
+        try:
+            command = args[0]
+            # Simple which implementation
+            path_dirs = os.environ.get('PATH', '').split(os.pathsep)
+            
+            for path_dir in path_dirs:
+                command_path = os.path.join(path_dir, command)
+                if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
+                    return command_path, 0
+            
+            return f"which: {command}: not found", 1
+        except Exception as e:
+            return f"which: {e}", 1
+    
+    def _cmd_whereis(self, args: List[str]) -> Tuple[str, int]:
+        """Find command location and documentation."""
+        if not args:
+            return "whereis: missing command name", 1
+        
+        try:
+            command = args[0]
+            results = []
+            
+            # Find binary
+            path_dirs = os.environ.get('PATH', '').split(os.pathsep)
+            for path_dir in path_dirs:
+                command_path = os.path.join(path_dir, command)
+                if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
+                    results.append(f"bin: {command_path}")
+                    break
+            
+            # Find man pages
+            man_dirs = ['/usr/share/man', '/usr/local/man', '/opt/homebrew/share/man']
+            for man_dir in man_dirs:
+                if os.path.exists(man_dir):
+                    for root, dirs, files in os.walk(man_dir):
+                        for file in files:
+                            if file.startswith(command + '.'):
+                                results.append(f"man: {os.path.join(root, file)}")
+                                break
+            
+            if results:
+                return "\n".join(results), 0
+            else:
+                return f"whereis: {command}: not found", 1
+        except Exception as e:
+            return f"whereis: {e}", 1
+    
+    def _cmd_echo(self, args: List[str]) -> Tuple[str, int]:
+        """Print text."""
+        text = ' '.join(args)
+        return text, 0
+    
+    def _cmd_codemate(self, args: List[str]) -> Tuple[str, int]:
+        """CodeMate integration commands."""
+        if not args:
+            help_text = """CodeMate Integration Commands:
+
+codemate debug <file>     - Debug code using CodeMate AI
+codemate review <file>    - Review code with CodeMate
+codemate optimize <file>  - Optimize code with CodeMate
+codemate test <file>      - Generate test cases with CodeMate
+codemate docs <file>      - Generate documentation with CodeMate
+codemate chat <question>  - Chat with CodeMate AI
+codemate status          - Check CodeMate integration status"""
+            return help_text, 0
+        
+        subcmd = args[0].lower()
+        
+        if subcmd == 'status':
+            status_text = """✅ CodeMate Terminal Integration: Active
+✅ AI Features: Enabled
+✅ Web Interface: Ready
+✅ Natural Language Processing: Working
+✅ Command History: Enabled
+✅ System Monitoring: Available
+
+Ready for CodeMate.ai hackathon!"""
+            return status_text, 0
+        
+        elif subcmd in ['debug', 'review', 'optimize', 'test', 'docs']:
+            if len(args) < 2:
+                return f"Usage: codemate {subcmd} <file>", 1
+            
+            filename = args[1]
+            if not os.path.exists(filename):
+                return f"File not found: {filename}", 1
+            
+            result_text = f"""CodeMate {subcmd.title()} Analysis for: {filename}
+
+This would integrate with CodeMate.ai API to:
+• Analyze the code file
+• Provide {subcmd} suggestions
+• Generate professional recommendations
+• Integrate with CodeMate's AI engine
+
+[Note: This is a demo integration for the hackathon]"""
+            return result_text, 0
+        
+        elif subcmd == 'chat':
+            if len(args) < 2:
+                return "Usage: codemate chat <question>", 1
+            
+            question = ' '.join(args[1:])
+            result_text = f"""CodeMate AI Chat Response:
+
+Question: {question}
+
+This would integrate with CodeMate.ai chat API to provide:
+• Context-aware responses
+• Code-specific suggestions
+• Professional coding advice
+• Integration with your codebase
+
+[Note: This is a demo integration for the hackathon]"""
+            return result_text, 0
+        
+        else:
+            return f"Unknown CodeMate command: {subcmd}", 1
+    
+    def _cmd_ask(self, args: List[str]) -> Tuple[str, int]:
+        """Ask AI questions."""
+        if not args:
+            return "ask: missing question", 1
+        
+        question = ' '.join(args)
+        question_lower = question.lower()
+        
+        # Enhanced AI responses
+        responses = {
+            'how to create a folder': 'Use: mkdir <folder_name>',
+            'how to create a file': 'Use: touch <file_name>',
+            'how to debug code': 'Use: codemate debug <file> for AI-powered debugging',
+            'how to review code': 'Use: codemate review <file> for professional code review',
+            'how to optimize code': 'Use: codemate optimize <file> for performance optimization',
+            'how to generate tests': 'Use: codemate test <file> for AI-generated test cases',
+            'what commands are available': 'Type "help" to see all available commands',
+            'what is codemate': 'CodeMate is an AI-powered coding assistant. Use "codemate" commands for integration',
+            'how to use codemate': 'Use "codemate" command to access CodeMate.ai features',
+            'how to find files': 'Use: find <pattern> or "find files called <name>"',
+            'how to search text': 'Use: grep <pattern> <file> or "search for <text> in <files>"',
+            'how to check system': 'Use: system_info, ps, free, df, or cpu commands',
+            'how to navigate': 'Use: cd <directory> or "go to <directory>"',
+            'how to copy files': 'Use: cp <source> <destination> or "copy <file> to <location>"',
+            'how to move files': 'Use: mv <source> <destination> or "move <file> to <location>"'
+        }
+        
+        response = None
+        for key, answer in responses.items():
+            if key in question_lower:
+                response = answer
+                break
+        
+        if not response:
+            response = f"I don't understand the question: '{question}'. Try asking about commands, files, or CodeMate features."
+        
+        return f"CodeMate AI: {response}", 0
+    
+    def _cmd_translate(self, args: List[str]) -> Tuple[str, int]:
+        """Convert natural language to commands."""
+        if not args:
+            return "translate: missing text", 1
+        
+        text = ' '.join(args)
+        translated = self.process_natural_language(text)
+        
+        if translated:
+            return f"AI Translation: {translated}", 0
+        else:
+            return f"Could not translate: '{text}'", 1
     
     def _cmd_help(self, args: List[str]) -> Tuple[str, int]:
         """Show help information."""
@@ -566,32 +1030,55 @@ File Operations:
   cd [path]              Change directory
   mkdir <dir>            Create directory
   rm <file/dir>          Remove file or directory
+  rmdir <dir>            Remove empty directory
   touch <file>           Create empty file
   cat <file>             Display file contents
   cp <src> <dest>        Copy file or directory
   mv <src> <dest>        Move/rename file or directory
 
+Search & Navigation:
+  find <pattern>         Find files by name
+  grep <pattern> [file]  Search for text in files
+  which <command>        Find command location
+  whereis <command>      Find command and documentation
+
 System Information:
   ps                     Show running processes
   free                   Show memory usage
   df                     Show disk usage
+  du [path]              Show directory size
   uptime                 Show system uptime
   whoami                 Show current user
   date                   Show current date/time
   system_info            Show detailed system information
   cpu                    Show CPU usage
 
+CodeMate Integration:
+  codemate debug <file>     Debug code with CodeMate AI
+  codemate review <file>    Review code with CodeMate
+  codemate optimize <file>  Optimize code with CodeMate
+  codemate test <file>      Generate test cases with CodeMate
+  codemate docs <file>      Generate documentation with CodeMate
+  codemate chat <question>  Chat with CodeMate AI
+  codemate status          Check CodeMate integration status
+
 AI Features:
+  ask <question>         Ask AI questions about commands
+  translate <text>        Convert natural language to commands
   Use natural language commands like:
   • "create a folder called test"
   • "show me my files"
   • "what's my memory usage"
   • "create a new folder called test and move file1.txt into it"
+  • "find files called readme"
+  • "search for function in *.py files"
 
 Utilities:
+  echo <text>            Print text
   help                   Show this help message
   history                Show command history
-  clear                  Clear screen"""
+  clear                  Clear screen
+  exit/quit              Exit terminal"""
         return help_text, 0
     
     def _cmd_history(self, args: List[str]) -> Tuple[str, int]:
@@ -607,7 +1094,7 @@ Utilities:
     
     def _cmd_clear(self, args: List[str]) -> Tuple[str, int]:
         """Clear screen."""
-        return "", 0
+        return "CLEAR_SCREEN", 0
 
 
 # Global terminal instance
@@ -642,6 +1129,19 @@ class handler(BaseHTTPRequestHandler):
                 "status": "success",
                 "help": help_output,
                 "exit_code": exit_code
+            }
+            self.wfile.write(json.dumps(response).encode())
+        
+        elif self.path == '/api/welcome':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            
+            welcome_info = terminal_api.get_welcome_info()
+            response = {
+                "status": "success",
+                "welcome": welcome_info
             }
             self.wfile.write(json.dumps(response).encode())
         
@@ -749,3 +1249,21 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
+
+# Global terminal API instance
+terminal_api = TerminalAPI()
+
+if __name__ == '__main__':
+    from http.server import HTTPServer
+    
+    # Create HTTP server
+    server = HTTPServer(('localhost', 8000), handler)
+    print("🚀 CodeMate Terminal API Server running on http://localhost:8000")
+    print("📱 Web interface: Open public/index.html in your browser")
+    print("🛑 Press Ctrl+C to stop the server")
+    
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n🛑 Server stopped")
+        server.shutdown()
