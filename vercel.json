@@ -23,11 +23,5 @@
       "src": "/",
       "dest": "/public/index.html"
     }
-  ],
-  "functions": {
-    "api/terminal.py": {
-      "runtime": "python3.9"
-    }
-  },
-  "outputDirectory": "public"
+  ]
 }
